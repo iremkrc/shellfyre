@@ -393,6 +393,7 @@ int process_command(struct command_t *command)
 		strcpy(exec_arg_zero, "/bin/");
 		strcat(exec_arg_zero, command->args[0]);
 		const char *path = exec_arg_zero; // exec_arg_zero;
+
 		/*
 		char* argv[command->arg_count];
 		printf("%d \n",command->arg_count);
@@ -409,9 +410,20 @@ int process_command(struct command_t *command)
 	else
 	{
 		/// TODO: Wait for child to finish if command is not running in background
-		//print_command(command);
-		wait(NULL);
-		return SUCCESS;
+
+
+		// print_command(command);
+		// printf("backkGrundness is %i \n", command->background);
+		if (command->background == true) // check if BOOLEAN comparison can be done this way or not. 
+		{
+			printf("%d \n", getpid());
+			return SUCCESS;
+		}
+		else
+		{
+			wait(NULL);
+			return SUCCESS;
+		}
 	}
 
 	printf("-%s: %s: command not found\n", sysname, command->name);
