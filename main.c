@@ -6,6 +6,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+
+#define READ_END 0
+#define WRITE_END 1
+
 const char *sysname = "shellfyre";
 
 enum return_codes
@@ -362,6 +366,12 @@ int process_command(struct command_t *command)
 	// TODO: Implement your custom commands here
 
 	pid_t pid = fork();
+	int fd[2];
+	if (pipe(fd) == -1)
+	{
+		fprintf(stderr, "Pipe failed");
+		return 1;
+	}
 
 	if (pid == 0) // child
 	{
@@ -379,13 +389,28 @@ int process_command(struct command_t *command)
 		command->args[command->arg_count - 1] = NULL;
 
 		/// TODO: do your own exec with path resolving using execv()
+		char exec_arg_zero[1000];
+		strcpy(exec_arg_zero, "/bin/");
+		strcat(exec_arg_zero, command->args[0]);
+		const char *path = exec_arg_zero; // exec_arg_zero;
+		/*
+		char* argv[command->arg_count];
+		printf("%d \n",command->arg_count);
+		for (int i = 0; i < command->arg_count-1; i++){
+			argv[i] = command->args[i];
+		}
+		argv[command->arg_count-1] = NULL;
+		*/
+
+		execv(path, command->args);
 
 		exit(0);
 	}
 	else
 	{
 		/// TODO: Wait for child to finish if command is not running in background
-
+		//print_command(command);
+		wait(NULL);
 		return SUCCESS;
 	}
 
