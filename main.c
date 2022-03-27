@@ -343,6 +343,29 @@ int main()
 	return 0;
 }
 
+void file_search(char **args, int argCount){
+	if(argCount == 1){
+		//normal search
+
+	}else if (argCount == 2 && strcmp(args[1], "-r") == 0){
+		//search for file recursively
+		char exec_arg_zero[1000];
+		strcpy(exec_arg_zero, "/bin/");
+		strcat(exec_arg_zero, "find");
+		const char *path = exec_arg_zero;
+		execv(path, args);
+
+
+		/* code */
+	}else if(argCount == 2 && strcmp(args[1], "-o") == 0){
+		//search for file and open
+
+	}
+		
+	
+
+}
+
 int process_command(struct command_t *command)
 {
 	int r;
@@ -362,16 +385,15 @@ int process_command(struct command_t *command)
 			return SUCCESS;
 		}
 	}
+	if (strcmp(command->name, "filesearch") == 0)
+	{
+		file_search(command->args, command->arg_count);
+		return SUCCESS;
+	}
 
 	// TODO: Implement your custom commands here
 
 	pid_t pid = fork();
-	int fd[2];
-	if (pipe(fd) == -1)
-	{
-		fprintf(stderr, "Pipe failed");
-		return 1;
-	}
 
 	if (pid == 0) // child
 	{
@@ -411,19 +433,13 @@ int process_command(struct command_t *command)
 	{
 		/// TODO: Wait for child to finish if command is not running in background
 
-
 		// print_command(command);
 		// printf("backkGrundness is %i \n", command->background);
-		if (command->background == true) // check if BOOLEAN comparison can be done this way or not. 
-		{
-			printf("%d \n", getpid());
-			return SUCCESS;
-		}
-		else
+		if (command->background == false) // check if BOOLEAN comparison can be done this way or not.
 		{
 			wait(NULL);
-			return SUCCESS;
 		}
+		return SUCCESS;
 	}
 
 	printf("-%s: %s: command not found\n", sysname, command->name);
