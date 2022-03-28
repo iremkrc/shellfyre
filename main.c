@@ -6,7 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
-#include<dirent.h>
+#include <dirent.h>
 
 #define READ_END 0
 #define WRITE_END 1
@@ -343,40 +343,81 @@ int main()
 	printf("\n");
 	return 0;
 }
+void file_search_recursive(char *basePath, char *search_word)
+{
+	char path[1000];
+	struct dirent *dp;
+	DIR *dir = opendir(basePath);
+
+	// Unable to open directory stream
+	if (!dir)
+		return;
+
+	while ((dp = readdir(dir)) != NULL)
+	{
+		if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+		{
+			
+
+			// Construct new path from our base path
+			strcpy(path, basePath);
+			strcat(path, "/");
+			strcat(path, dp->d_name);
+			if (strstr(dp->d_name, search_word) != NULL)
+			{
+				printf("%s\n", path);
+			}
+
+			file_search_recursive(path, search_word);
+		}
+	}
+
+	closedir(dir);
+}
+
+
 
 void file_search(char **args, int argCount)
 {
-	printf("hello world");
+	// printf("hello world");
 	if (argCount == 1)
 	{
 		// normal search
 		DIR *d;
 		struct dirent *dir;
+		char *dir_array[1024];
 		d = opendir(".");
+		int count = 0;
 		if (d)
 		{
 			while ((dir = readdir(d)) != NULL)
 			{
-				printf("%s\n", dir->d_name);
+				dir_array[count] = malloc(1024);
+				strcpy(dir_array[count], dir->d_name);
+				count++;
+				// printf("%s\n", dir->d_name);
 			}
 			closedir(d);
 		}
-	
+		for (int i = 0; i < count; i++)
+		{
+			if (strstr(dir_array[i], args[0]) != NULL)
+			{
+				printf("%s\n", dir_array[i]);
+			}
+		}
 	}
-	else if (argCount == 2 && strcmp(args[1], "-r") == 0)
+	else if (argCount == 2 && strcmp(args[0], "-r") == 0)
 	{
 		// search for file recursively
-		char exec_arg_zero[1000];
-		strcpy(exec_arg_zero, "/bin/");
-		strcat(exec_arg_zero, "find");
-		const char *path = exec_arg_zero;
-		execv(path, args);
+		file_search_recursive(".", args[1]);
 
 		/* code */
 	}
-	else if (argCount == 2 && strcmp(args[1], "-o") == 0)
+	else if (argCount == 2 && strcmp(args[0], "-o") == 0)
 	{
 		// search for file and open
+		
 	}
 }
 
@@ -401,7 +442,9 @@ int process_command(struct command_t *command)
 	}
 	if (strcmp(command->name, "filesearch") == 0)
 	{
+		// printf("ARGS1 inside if: %s\n", command->args[0]);
 		file_search(command->args, command->arg_count);
+
 		return SUCCESS;
 	}
 
@@ -426,6 +469,8 @@ int process_command(struct command_t *command)
 
 		/// TODO: do your own exec with path resolving using execv()
 		char exec_arg_zero[1000];
+
+		/// ASK: Is bin enough?
 		strcpy(exec_arg_zero, "/bin/");
 		strcat(exec_arg_zero, command->args[0]);
 		const char *path = exec_arg_zero; // exec_arg_zero;
@@ -448,7 +493,7 @@ int process_command(struct command_t *command)
 		/// TODO: Wait for child to finish if command is not running in background
 
 		// print_command(command);
-		// printf("backkGrundness is %i \n", command->background);
+		/// ASK: When background process is done, if we write another command,it gives seg fault.
 		if (command->background == false) // check if BOOLEAN comparison can be done this way or not.
 		{
 			wait(NULL);
