@@ -7,11 +7,14 @@
 #include <stdbool.h>
 #include <errno.h>
 #include <dirent.h>
+#include <stdio.h>
 
 #define READ_END 0
 #define WRITE_END 1
 
 const char *sysname = "shellfyre";
+char *cdhistory[1000];
+int cdh_counter = 0;
 
 enum return_codes
 {
@@ -357,7 +360,6 @@ void file_search_recursive(char *basePath, char *search_word)
 	{
 		if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
 		{
-			
 
 			// Construct new path from our base path
 			strcpy(path, basePath);
@@ -375,7 +377,8 @@ void file_search_recursive(char *basePath, char *search_word)
 	closedir(dir);
 }
 
-void file_open_recursive(char *basePath, char *search_word){
+void file_open_recursive(char *basePath, char *search_word)
+{
 	char path[1000];
 	struct dirent *dp;
 	DIR *dir = opendir(basePath);
@@ -388,7 +391,6 @@ void file_open_recursive(char *basePath, char *search_word){
 	{
 		if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
 		{
-			
 
 			// Construct new path from our base path
 			strcpy(path, basePath);
@@ -398,7 +400,7 @@ void file_open_recursive(char *basePath, char *search_word){
 			if (strstr(dp->d_name, search_word) != NULL)
 			{
 				printf("%s\n", path);
-				///ASK: it does not print the following line, also does not open the file
+				/// ASK: it does not print the following line, also does not open the file
 				printf("following line\n");
 				char exec_arg_zero[1000];
 				strcpy(exec_arg_zero, "/bin/xdg-open");
@@ -407,13 +409,16 @@ void file_open_recursive(char *basePath, char *search_word){
 				new_args[2] = NULL;
 				printf("print name: %s\n", new_args[1]);
 				printf("print path: %s\n", path);
-				//strcat(exec_arg_zero, args[1]);
+				// strcat(exec_arg_zero, args[1]);
 				const char *path2 = exec_arg_zero; // exec_arg_zero;
 				pid_t pid = fork();
 
-				if (pid == 0){ // child
+				if (pid == 0)
+				{ // child
 					execv(path2, new_args);
-				}else{
+				}
+				else
+				{
 					wait(NULL);
 				}
 			}
@@ -424,8 +429,6 @@ void file_open_recursive(char *basePath, char *search_word){
 
 	closedir(dir);
 }
-
-
 
 void file_search(char **args, int argCount)
 {
@@ -495,20 +498,22 @@ void file_search(char **args, int argCount)
 				new_args[0] = "xdg-open";
 				new_args[1] = dir_array[i];
 				new_args[2] = NULL;
-				//strcat(exec_arg_zero, args[1]);
+				// strcat(exec_arg_zero, args[1]);
 				const char *path = exec_arg_zero; // exec_arg_zero;
 				pid_t pid = fork();
 
-				if (pid == 0){ // child
+				if (pid == 0)
+				{ // child
 					execv(path, new_args);
-				}else{
+				}
+				else
+				{
 					wait(NULL);
 				}
-
 			}
 		}
-		
-	}else if ((argCount == 3 && strcmp(args[0], "-o") == 0 && strcmp(args[1], "-r") == 0) || (argCount == 3 && strcmp(args[0], "-r") == 0 && strcmp(args[1], "-o") == 0))
+	}
+	else if ((argCount == 3 && strcmp(args[0], "-o") == 0 && strcmp(args[1], "-r") == 0) || (argCount == 3 && strcmp(args[0], "-r") == 0 && strcmp(args[1], "-o") == 0))
 	{
 		// search for file recursively and open
 		file_open_recursive(".", args[2]);
@@ -524,6 +529,7 @@ void file_search(char **args, int argCount)
 int process_command(struct command_t *command)
 {
 	int r;
+
 	if (strcmp(command->name, "") == 0)
 		return SUCCESS;
 
@@ -535,11 +541,76 @@ int process_command(struct command_t *command)
 		if (command->arg_count > 0)
 		{
 			r = chdir(command->args[0]);
+			if (cdh_counter < 10)
+			{
+				cdhistory[cdh_counter] = malloc(1000);
+				strcpy(cdhistory[cdh_counter], getcwd(NULL, 0));
+				cdh_counter++;
+				printf("cdh counter1: %d\n", cdh_counter);
+			}
+			else
+			{
+				for (int i = 0; i < 9; i++)
+				{
+					strcpy(cdhistory[i], cdhistory[i + 1]);
+				}
+				cdhistory[9] = malloc(1000);
+				strcpy(cdhistory[9], getcwd(NULL, 0));
+			}
+			printf("cdh counter2: %d\n", cdh_counter);
 			if (r == -1)
 				printf("-%s: %s: %s\n", sysname, command->name, strerror(errno));
 			return SUCCESS;
 		}
 	}
+
+	if (strcmp(command->name, "cdh") == 0)
+	{
+		if(cdh_counter ==0){
+			printf("No previous directories to select. Please cd at least once :)\n");
+			return SUCCESS;
+		}
+		printf("cdh counter: %d\n", cdh_counter);
+		for (int i = 0; i < cdh_counter - 1; i++)
+		{
+			printf("%c\t%d) %s\n", cdh_counter - i - 1 + 96, cdh_counter - i - 1, cdhistory[i]);
+
+			// chdir(cdhistory[i]);
+		}
+
+		pid_t pid = fork();
+		int num;
+		
+		if (pid == 0)
+		{ // child
+			printf("Select directory by letter or number: ");
+			scanf("%d", &num);
+		}
+		else
+		{
+			wait(NULL);
+
+		}
+	
+
+		if (num > 0 && num < cdh_counter)
+		{
+			printf("after select: %d\n", cdh_counter - num - 1);
+			printf("after select str: %s\n", cdhistory[cdh_counter - num - 1]);
+			chdir(cdhistory[cdh_counter - num - 1]);
+			printf("fgjhkl\n");
+			return SUCCESS;
+		}
+		else if (num - 96 > 0 && num - 96 < cdh_counter)
+		{
+			printf("after select: %d\n", cdh_counter - num + 96 - 1);
+			printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
+			chdir(cdhistory[cdh_counter - num + 96 - 1]);
+			return SUCCESS;
+		}
+		
+	}
+
 	if (strcmp(command->name, "filesearch") == 0)
 	{
 		// printf("ARGS1 inside if: %s\n", command->args[0]);
