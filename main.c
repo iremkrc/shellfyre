@@ -375,6 +375,56 @@ void file_search_recursive(char *basePath, char *search_word)
 	closedir(dir);
 }
 
+void file_open_recursive(char *basePath, char *search_word){
+	char path[1000];
+	struct dirent *dp;
+	DIR *dir = opendir(basePath);
+
+	// Unable to open directory stream
+	if (!dir)
+		return;
+
+	while ((dp = readdir(dir)) != NULL)
+	{
+		if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0)
+		{
+			
+
+			// Construct new path from our base path
+			strcpy(path, basePath);
+			strcat(path, "/");
+			strcat(path, dp->d_name);
+			char *new_args[3];
+			if (strstr(dp->d_name, search_word) != NULL)
+			{
+				printf("%s\n", path);
+				///ASK: it does not print the following line, also does not open the file
+				printf("following line\n");
+				char exec_arg_zero[1000];
+				strcpy(exec_arg_zero, "/bin/xdg-open");
+				new_args[0] = "xdg-open";
+				new_args[1] = dp->d_name;
+				new_args[2] = NULL;
+				printf("print name: %s\n", new_args[1]);
+				printf("print path: %s\n", path);
+				//strcat(exec_arg_zero, args[1]);
+				const char *path2 = exec_arg_zero; // exec_arg_zero;
+				pid_t pid = fork();
+
+				if (pid == 0){ // child
+					execv(path2, new_args);
+				}else{
+					wait(NULL);
+				}
+			}
+
+			file_search_recursive(path, search_word);
+		}
+	}
+
+	closedir(dir);
+}
+
 
 
 void file_search(char **args, int argCount)
@@ -417,7 +467,57 @@ void file_search(char **args, int argCount)
 	else if (argCount == 2 && strcmp(args[0], "-o") == 0)
 	{
 		// search for file and open
+		DIR *d;
+		struct dirent *dir;
+		char *dir_array[1024];
+		d = opendir(".");
+		int count = 0;
+		if (d)
+		{
+			while ((dir = readdir(d)) != NULL)
+			{
+				dir_array[count] = malloc(1024);
+				strcpy(dir_array[count], dir->d_name);
+				count++;
+				// printf("%s\n", dir->d_name);
+			}
+			closedir(d);
+		}
+		char *new_args[3];
+		for (int i = 0; i < count; i++)
+		{
+			if (strstr(dir_array[i], args[1]) != NULL)
+			{
+				printf("%s\n", dir_array[i]);
+				char exec_arg_zero[1000];
+
+				strcpy(exec_arg_zero, "/bin/xdg-open");
+				new_args[0] = "xdg-open";
+				new_args[1] = dir_array[i];
+				new_args[2] = NULL;
+				//strcat(exec_arg_zero, args[1]);
+				const char *path = exec_arg_zero; // exec_arg_zero;
+				pid_t pid = fork();
+
+				if (pid == 0){ // child
+					execv(path, new_args);
+				}else{
+					wait(NULL);
+				}
+
+			}
+		}
 		
+	}else if ((argCount == 3 && strcmp(args[0], "-o") == 0 && strcmp(args[1], "-r") == 0) || (argCount == 3 && strcmp(args[0], "-r") == 0 && strcmp(args[1], "-o") == 0))
+	{
+		// search for file recursively and open
+		file_open_recursive(".", args[2]);
+
+		/* code */
+	}
+	else
+	{
+		printf("Invalid arguments\n");
 	}
 }
 
@@ -470,20 +570,9 @@ int process_command(struct command_t *command)
 		/// TODO: do your own exec with path resolving using execv()
 		char exec_arg_zero[1000];
 
-		/// ASK: Is bin enough?
 		strcpy(exec_arg_zero, "/bin/");
 		strcat(exec_arg_zero, command->args[0]);
 		const char *path = exec_arg_zero; // exec_arg_zero;
-
-		/*
-		char* argv[command->arg_count];
-		printf("%d \n",command->arg_count);
-		for (int i = 0; i < command->arg_count-1; i++){
-			argv[i] = command->args[i];
-		}
-		argv[command->arg_count-1] = NULL;
-		*/
-
 		execv(path, command->args);
 
 		exit(0);
@@ -493,7 +582,6 @@ int process_command(struct command_t *command)
 		/// TODO: Wait for child to finish if command is not running in background
 
 		// print_command(command);
-		/// ASK: When background process is done, if we write another command,it gives seg fault.
 		if (command->background == false) // check if BOOLEAN comparison can be done this way or not.
 		{
 			wait(NULL);
