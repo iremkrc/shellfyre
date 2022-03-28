@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include<dirent.h>
 
 #define READ_END 0
 #define WRITE_END 1
@@ -343,27 +344,40 @@ int main()
 	return 0;
 }
 
-void file_search(char **args, int argCount){
-	if(argCount == 1){
-		//normal search
-
-	}else if (argCount == 2 && strcmp(args[1], "-r") == 0){
-		//search for file recursively
+void file_search(char **args, int argCount)
+{
+	printf("hello world");
+	if (argCount == 1)
+	{
+		// normal search
+		DIR *d;
+		struct dirent *dir;
+		d = opendir(".");
+		if (d)
+		{
+			while ((dir = readdir(d)) != NULL)
+			{
+				printf("%s\n", dir->d_name);
+			}
+			closedir(d);
+		}
+	
+	}
+	else if (argCount == 2 && strcmp(args[1], "-r") == 0)
+	{
+		// search for file recursively
 		char exec_arg_zero[1000];
 		strcpy(exec_arg_zero, "/bin/");
 		strcat(exec_arg_zero, "find");
 		const char *path = exec_arg_zero;
 		execv(path, args);
 
-
 		/* code */
-	}else if(argCount == 2 && strcmp(args[1], "-o") == 0){
-		//search for file and open
-
 	}
-		
-	
-
+	else if (argCount == 2 && strcmp(args[1], "-o") == 0)
+	{
+		// search for file and open
+	}
 }
 
 int process_command(struct command_t *command)
