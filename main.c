@@ -526,6 +526,8 @@ void file_search(char **args, int argCount)
 	}
 }
 
+
+
 int process_command(struct command_t *command)
 {
 	int r;
@@ -613,6 +615,25 @@ int process_command(struct command_t *command)
 	{
 		// printf("ARGS1 inside if: %s\n", command->args[0]);
 		file_search(command->args, command->arg_count);
+
+		return SUCCESS;
+	}
+
+	if(strcmp(command->name, "take") == 0)
+	{
+		printf("take aruguments %s\n", command->args[0]);
+		print_command(command);
+		char* str = command->args[0];
+		printf("STR: %s\n", str);
+		const char s[2] = "/";
+		char *token;
+		token = strtok(str, s);
+		while( token != NULL ) {
+			printf( "Tokens are %s\n", token );
+			mkdir(token, 0777);
+			chdir(token);
+			token = strtok(NULL, s);
+   		}
 
 		return SUCCESS;
 	}
