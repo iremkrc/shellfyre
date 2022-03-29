@@ -340,7 +340,7 @@ int main()
 		if (code == EXIT)
 			break;
 
-		free_command(command);
+		//free_command(command);
 	}
 
 	printf("\n");
@@ -541,32 +541,39 @@ int process_command(struct command_t *command)
 		if (command->arg_count > 0)
 		{
 			r = chdir(command->args[0]);
-			if (cdh_counter < 10)
+			if (r == -1)
 			{
-				cdhistory[cdh_counter] = malloc(1000);
-				strcpy(cdhistory[cdh_counter], getcwd(NULL, 0));
-				cdh_counter++;
-				printf("cdh counter1: %d\n", cdh_counter);
+				printf("-%s: %s: %s\n", sysname, command->name, strerror(errno));
 			}
 			else
 			{
-				for (int i = 0; i < 9; i++)
+				if (cdh_counter < 10)
 				{
-					strcpy(cdhistory[i], cdhistory[i + 1]);
+					cdhistory[cdh_counter] = malloc(1000);
+					strcpy(cdhistory[cdh_counter], getcwd(NULL, 0));
+					cdh_counter++;
+					printf("cdh counter1: %d\n", cdh_counter);
 				}
-				cdhistory[9] = malloc(1000);
-				strcpy(cdhistory[9], getcwd(NULL, 0));
+				else
+				{
+					for (int i = 0; i < 9; i++)
+					{
+						strcpy(cdhistory[i], cdhistory[i + 1]);
+					}
+					cdhistory[9] = malloc(1000);
+					strcpy(cdhistory[9], getcwd(NULL, 0));
+				}
+				printf("cdh counter2: %d\n", cdh_counter);
 			}
-			printf("cdh counter2: %d\n", cdh_counter);
-			if (r == -1)
-				printf("-%s: %s: %s\n", sysname, command->name, strerror(errno));
+
 			return SUCCESS;
 		}
 	}
 
 	if (strcmp(command->name, "cdh") == 0)
 	{
-		if(cdh_counter ==0){
+		if (cdh_counter == 0)
+		{
 			printf("No previous directories to select. Please cd at least once :)\n");
 			return SUCCESS;
 		}
@@ -578,37 +585,28 @@ int process_command(struct command_t *command)
 			// chdir(cdhistory[i]);
 		}
 
-		pid_t pid = fork();
+		//pid_t pid = fork();
 		int num;
-		
-		if (pid == 0)
-		{ // child
-			printf("Select directory by letter or number: ");
-			scanf("%d", &num);
-		}
-		else
-		{
-			wait(NULL);
-
-		}
+		char str[50];
+		printf("Select directory by letter or number: ");
+		///ASK: When we use scanf, it does not work; is it okay to use gets?
+		gets(str);
+		num = atoi(str);
 	
-
 		if (num > 0 && num < cdh_counter)
 		{
-			printf("after select: %d\n", cdh_counter - num - 1);
-			printf("after select str: %s\n", cdhistory[cdh_counter - num - 1]);
+			//printf("after select: %d\n", cdh_counter - num - 1);
+			//printf("after select str: %s\n", cdhistory[cdh_counter - num - 1]);
 			chdir(cdhistory[cdh_counter - num - 1]);
-			printf("fgjhkl\n");
 			return SUCCESS;
 		}
 		else if (num - 96 > 0 && num - 96 < cdh_counter)
 		{
-			printf("after select: %d\n", cdh_counter - num + 96 - 1);
-			printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
+			//printf("after select: %d\n", cdh_counter - num + 96 - 1);
+			//printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
 			chdir(cdhistory[cdh_counter - num + 96 - 1]);
 			return SUCCESS;
 		}
-		
 	}
 
 	if (strcmp(command->name, "filesearch") == 0)
