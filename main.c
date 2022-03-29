@@ -637,6 +637,16 @@ int process_command(struct command_t *command)
 
 		return SUCCESS;
 	}
+	if(strcmp(command->name, "joker")==0){
+		
+		char command[100], msg[100], command2[100], msg2[500];
+
+		
+		strcpy(command,"curl https://icanhazdadjoke.com | xargs -I{} notify-send {}");
+		system(command);
+		printf("\n");
+		return SUCCESS;
+	}
 
 	// TODO: Implement your custom commands here
 
