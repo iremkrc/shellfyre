@@ -671,7 +671,8 @@ int process_command(struct command_t *command)
 		//execv(/bin/sh) 
 		//calling exev(crontab,command )
 		//strcpy(command,"curl -s https://icanhazdadjoke.com | xargs -I{} notify-send {}");
-		strcpy(command, "crontab -l | { cat; echo \"*/1 * * * * XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/bin/notify-send '$(curl -s https://icanhazdadjoke.com)'\";} | crontab -");
+		strcpy(command, "crontab -l | { cat; echo \"*/15 * * * * XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/bin/notify-send \\\"\\$(curl -s https://icanhazdadjoke.com)\\\"\";} | crontab -");
+		//strcpy(command, "crontab -l | { cat; echo \"51 13 * * * env DISPLAY=:0 /usr/bin/gnome-calculator\"; } | crontab -");
 		system(command);
 		//printf("\n");
 		return SUCCESS;
