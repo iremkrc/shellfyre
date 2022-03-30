@@ -13,6 +13,7 @@
 #define WRITE_END 1
 
 const char *sysname = "shellfyre";
+/// ASK: We define cdhistory and cdh counter as global variables, are we allowed to do that or do we need to pass them as arguments to the functions?
 char *cdhistory[1000];
 int cdh_counter = 0;
 
@@ -400,7 +401,7 @@ void file_open_recursive(char *basePath, char *search_word)
 			if (strstr(dp->d_name, search_word) != NULL)
 			{
 				printf("%s\n", path);
-				/// ASK: it does not print the following line, also does not open the file
+				/// ASK: it does not print the following line, also does not open the file at the end; try filesearch -r -o comp
 				printf("following line\n");
 				char exec_arg_zero[1000];
 				strcpy(exec_arg_zero, "/bin/xdg-open");
@@ -423,7 +424,7 @@ void file_open_recursive(char *basePath, char *search_word)
 				}
 			}
 
-			file_search_recursive(path, search_word);
+			file_open_recursive(path, search_word);
 		}
 	}
 
@@ -571,7 +572,7 @@ int process_command(struct command_t *command)
 			return SUCCESS;
 		}
 	}
-
+	/// ASK: We are incrementing cdh counter in cd command, also take command. Are these two enough?
 	if (strcmp(command->name, "cdh") == 0)
 	{
 		if (cdh_counter == 0)
@@ -631,20 +632,48 @@ int process_command(struct command_t *command)
 		while( token != NULL ) {
 			printf( "Tokens are %s\n", token );
 			mkdir(token, 0777);
-			chdir(token);
+			r = chdir(token);
+			if (r == -1)
+			{
+				printf("-%s: %s: %s\n", sysname, command->name, strerror(errno));
+			}
+			else
+			{
+				if (cdh_counter < 10)
+				{
+					cdhistory[cdh_counter] = malloc(1000);
+					strcpy(cdhistory[cdh_counter], getcwd(NULL, 0));
+					cdh_counter++;
+					printf("cdh counter1: %d\n", cdh_counter);
+				}
+				else
+				{
+					for (int i = 0; i < 9; i++)
+					{
+						strcpy(cdhistory[i], cdhistory[i + 1]);
+					}
+					cdhistory[9] = malloc(1000);
+					strcpy(cdhistory[9], getcwd(NULL, 0));
+				}
+				printf("cdh counter2: %d\n", cdh_counter);
+			}
 			token = strtok(NULL, s);
    		}
 
 		return SUCCESS;
 	}
+	/// ASK: joker is sending a joke as a notification but how to use crontab?
+	/// ASK: crontab does not work :(
 	if(strcmp(command->name, "joker")==0){
 		
-		char command[100], msg[100], command2[100], msg2[500];
+		char command[1000], msg[100], command2[100], msg2[500];
 
-		
-		strcpy(command,"curl https://icanhazdadjoke.com | xargs -I{} notify-send {}");
+		//execv(/bin/sh) 
+		//calling exev(crontab,command )
+		//strcpy(command,"curl -s https://icanhazdadjoke.com | xargs -I{} notify-send {}");
+		strcpy(command, "crontab -l | { cat; echo \"*/1 * * * * XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/bin/notify-send '$(curl -s https://icanhazdadjoke.com)'\";} | crontab -");
 		system(command);
-		printf("\n");
+		//printf("\n");
 		return SUCCESS;
 	}
 
