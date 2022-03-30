@@ -13,7 +13,6 @@
 #define WRITE_END 1
 
 const char *sysname = "shellfyre";
-/// ASK: We define cdhistory and cdh counter as global variables, are we allowed to do that or do we need to pass them as arguments to the functions?
 char *cdhistory[1000];
 int cdh_counter = 0;
 
@@ -406,7 +405,7 @@ void file_open_recursive(char *basePath, char *search_word)
 				char exec_arg_zero[1000];
 				strcpy(exec_arg_zero, "/bin/xdg-open");
 				new_args[0] = "xdg-open";
-				new_args[1] = dp->d_name;
+				new_args[1] = path;
 				new_args[2] = NULL;
 				printf("print name: %s\n", new_args[1]);
 				printf("print path: %s\n", path);
