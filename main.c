@@ -701,7 +701,7 @@ int process_command(struct command_t *command)
 		FILE *f;
 
 		srand(time(NULL));
-		randomnumber = rand() % 10 + 1;
+		randomnumber = rand() % 10;
 
 		sprintf(textNumber, "%d", randomnumber);
 		strcat(file_name, "poems/");
