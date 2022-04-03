@@ -340,7 +340,7 @@ int main()
 		if (code == EXIT)
 			break;
 
-		//free_command(command);
+		// free_command(command);
 	}
 
 	printf("\n");
@@ -526,8 +526,6 @@ void file_search(char **args, int argCount)
 	}
 }
 
-
-
 int process_command(struct command_t *command)
 {
 	int r;
@@ -587,25 +585,25 @@ int process_command(struct command_t *command)
 			// chdir(cdhistory[i]);
 		}
 
-		//pid_t pid = fork();
+		// pid_t pid = fork();
 		int num;
 		char str[50];
 		printf("Select directory by letter or number: ");
-		///ASK: When we use scanf, it does not work; is it okay to use gets?
+		/// ASK: When we use scanf, it does not work; is it okay to use gets?
 		gets(str);
 		num = atoi(str);
-	
+
 		if (num > 0 && num < cdh_counter)
 		{
-			//printf("after select: %d\n", cdh_counter - num - 1);
-			//printf("after select str: %s\n", cdhistory[cdh_counter - num - 1]);
+			// printf("after select: %d\n", cdh_counter - num - 1);
+			// printf("after select str: %s\n", cdhistory[cdh_counter - num - 1]);
 			chdir(cdhistory[cdh_counter - num - 1]);
 			return SUCCESS;
 		}
 		else if (num - 96 > 0 && num - 96 < cdh_counter)
 		{
-			//printf("after select: %d\n", cdh_counter - num + 96 - 1);
-			//printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
+			// printf("after select: %d\n", cdh_counter - num + 96 - 1);
+			// printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
 			chdir(cdhistory[cdh_counter - num + 96 - 1]);
 			return SUCCESS;
 		}
@@ -619,17 +617,18 @@ int process_command(struct command_t *command)
 		return SUCCESS;
 	}
 
-	if(strcmp(command->name, "take") == 0)
+	if (strcmp(command->name, "take") == 0)
 	{
 		printf("take aruguments %s\n", command->args[0]);
 		print_command(command);
-		char* str = command->args[0];
+		char *str = command->args[0];
 		printf("STR: %s\n", str);
 		const char s[2] = "/";
 		char *token;
 		token = strtok(str, s);
-		while( token != NULL ) {
-			printf( "Tokens are %s\n", token );
+		while (token != NULL)
+		{
+			printf("Tokens are %s\n", token);
 			mkdir(token, 0777);
 			r = chdir(token);
 			if (r == -1)
@@ -657,26 +656,60 @@ int process_command(struct command_t *command)
 				printf("cdh counter2: %d\n", cdh_counter);
 			}
 			token = strtok(NULL, s);
-   		}
+		}
 
 		return SUCCESS;
 	}
 	/// ASK: joker is sending a joke as a notification but how to use crontab?
 	/// ASK: crontab does not work :(
-	if(strcmp(command->name, "joker")==0){
-		
+	if (strcmp(command->name, "joker") == 0)
+	{
+
 		char command[1000], msg[100], command2[100], msg2[500];
 
-		//execv(/bin/sh) 
-		//calling exev(crontab,command )
-		//strcpy(command,"curl -s https://icanhazdadjoke.com | xargs -I{} notify-send {}");
+		// execv(/bin/sh)
+		// calling exev(crontab,command )
+		// strcpy(command,"curl -s https://icanhazdadjoke.com | xargs -I{} notify-send {}");
 		strcpy(command, "crontab -l | { cat; echo \"*/15 * * * * XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/bin/notify-send \\\"\\$(curl -s https://icanhazdadjoke.com)\\\"\";} | crontab -");
-		//strcpy(command, "crontab -l | { cat; echo \"51 13 * * * env DISPLAY=:0 /usr/bin/gnome-calculator\"; } | crontab -");
+		// strcpy(command, "crontab -l | { cat; echo \"51 13 * * * env DISPLAY=:0 /usr/bin/gnome-calculator\"; } | crontab -");
 		system(command);
-		//printf("\n");
+		// printf("\n");
 		return SUCCESS;
 	}
+	if (strcmp(command->name, "poet") == 0)
+	{
+		int randomnumber;
+		size_t len = 0;
+		char *file_name = malloc(1000);
+		char *s;
+		char textNumber[200];
 
+		FILE *f;
+
+		srand(time(NULL));
+		randomnumber = rand() % 10 + 1;
+
+		sprintf(textNumber, "%d", randomnumber);
+		strcat(file_name, "poems/");
+		strcat(file_name, textNumber);
+		strcat(file_name, ".txt");
+		f = fopen(file_name, "r");
+
+		if (!f)
+		{
+			printf("Could not open the file");
+		}
+
+		while (getline(&s, &len, f) != -1)
+		{
+			printf("%s", s);
+		}
+		printf("\n");
+		fclose(f);
+
+		free(file_name);
+		return SUCCESS;
+	}
 	// TODO: Implement your custom commands here
 
 	pid_t pid = fork();
