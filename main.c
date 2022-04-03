@@ -417,8 +417,6 @@ void file_open_recursive(char *basePath, char *search_word)
 				new_args[0] = "xdg-open";
 				new_args[1] = path;
 				new_args[2] = NULL;
-				printf("print name: %s\n", new_args[1]);
-				printf("print path: %s\n", path);
 				const char *path2 = exec_arg_zero;
 				pid_t pid = fork();
 
@@ -632,7 +630,7 @@ int process_command(struct command_t *command)
 			chdir(cdhistory[cdh_counter - num - 1]);
 			return SUCCESS;
 		}
-		printf("num: %d\n", num);
+
 		if (num - 96 > 0 && num - 96 < cdh_counter)
 		{
 			chdir(cdhistory[cdh_counter - num + 96 - 1]);
