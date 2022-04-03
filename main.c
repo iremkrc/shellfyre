@@ -17,6 +17,8 @@
 #define WRITE_END 1
 
 const char *sysname = "shellfyre";
+
+// Global variables for cdh command
 char *cdhistory[1000];
 int cdh_counter = 0;
 
@@ -39,6 +41,7 @@ struct command_t
 	struct command_t *next; // for piping
 };
 
+// Global variables for ctrlz command
 struct command_t *commandz;
 char *historyz[1000];
 char *cdhistoryz[1000];
@@ -356,7 +359,7 @@ int main()
 	return 0;
 }
 void file_search_recursive(char *basePath, char *search_word)
-{
+{ // search for a file recursively
 	char path[1000];
 	struct dirent *dp;
 	DIR *dir = opendir(basePath);
@@ -437,6 +440,12 @@ void file_open_recursive(char *basePath, char *search_word)
 }
 
 void file_search(char **args, int argCount)
+/**
+ * @brief The command takes an input keyword
+and scans all the files in the current directory to match the keyword with the file name and
+then it returns the list of file(s) with this name regardless of the file extensions
+ * 
+ */
 {
 
 	if (argCount == 1)
@@ -528,6 +537,7 @@ void file_search(char **args, int argCount)
 int process_command(struct command_t *command)
 {
 	int r;
+	// put the previous command to the commandz variable in case ctrlz is called after that
 	if(strcmp(command->name, "ctrlz")!=0){
 		commandz = command;
 	}
@@ -543,19 +553,24 @@ int process_command(struct command_t *command)
 	{
 		if (command->arg_count > 0)
 		{
+			// put the previous path to the historyz variable in case ctrlz is called after that
 			strcpy(historyz, getcwd(NULL, 0));
+			// put the all elements in cdhistory to the cdhistoryz one by one in case ctrlz is called after that
 			for (int i = 0; i < cdh_counter; i++)
 			{
 				cdhistoryz[i] = malloc(1000);
 				strcpy(cdhistoryz[i], cdhistory[i]);
 			}
+
+
 			r = chdir(command->args[0]);
 			if (r == -1)
 			{
 				printf("-%s: %s: %s\n", sysname, command->name, strerror(errno));
 			}
 			else
-			{
+			{	
+				// cdh_counter can remember max 10 prev. cd commands.
 				if (cdh_counter < 10)
 				{
 					cdhistory[cdh_counter] = malloc(1000);
@@ -564,6 +579,7 @@ int process_command(struct command_t *command)
 				}
 				else
 				{
+					// if user makes more than 10 cd commands cdh go and change first command it came.
 					for (int i = 0; i < 9; i++)
 					{
 						strcpy(cdhistory[i], cdhistory[i + 1]);
@@ -574,6 +590,7 @@ int process_command(struct command_t *command)
 						strcpy(cdhistory[i], cdhistory[i + 1]);
 					}
 					cdhistory[9] = malloc(1000);
+					//getcwd commands takes current directory we are in.
 					strcpy(cdhistory[9], getcwd(NULL, 0));
 				}
 			}
@@ -581,9 +598,10 @@ int process_command(struct command_t *command)
 			return SUCCESS;
 		}
 	}
-	/// ASK: We are incrementing cdh counter in cd command, also take command. Are these two enough?
+	
 	if (strcmp(command->name, "cdh") == 0)
 	{
+		// this command stores 10 cd commands before. 
 		if (cdh_counter == 0)
 		{
 			printf("No previous directories to select. Please cd at least once :)\n");
@@ -595,10 +613,12 @@ int process_command(struct command_t *command)
 
 		}
 
+		// after that user choose a directory to continue 
 		int num;
 		char str[50];
 		printf("Select directory by letter or number: ");
 		gets(str);
+		// user's choice is evaluated using ASCI properties
 		if(str[0] > 96 && str[0] < 107){
 			num = str[0] - 96;
 		}
@@ -635,6 +655,7 @@ int process_command(struct command_t *command)
 		token = strtok(str, s);
 		while (token != NULL)
 		{
+			// give required permissons to the file
 			mkdir(token, 0777);
 			r = chdir(token);
 			if (r == -1)
@@ -648,10 +669,11 @@ int process_command(struct command_t *command)
 					cdhistory[cdh_counter] = malloc(1000);
 					strcpy(cdhistory[cdh_counter], getcwd(NULL, 0));
 					cdh_counter++;
-					printf("cdh counter1: %d\n", cdh_counter);
+					
 				}
 				else
-				{
+				{	
+					//shifting all elements in cdhistory by one
 					for (int i = 0; i < 9; i++)
 					{
 						strcpy(cdhistory[i], cdhistory[i + 1]);
@@ -659,7 +681,6 @@ int process_command(struct command_t *command)
 					cdhistory[9] = malloc(1000);
 					strcpy(cdhistory[9], getcwd(NULL, 0));
 				}
-				printf("cdh counter2: %d\n", cdh_counter);
 			}
 			token = strtok(NULL, s);
 		}
@@ -671,10 +692,16 @@ int process_command(struct command_t *command)
 	{
 
 		char command[1000], msg[100], command2[100], msg2[500];
+		// this command is used to send a message to a user using crotab file.
+		// It writes command to crontab file to execute a commands that is throwing a joke every 15 minutes.
+		// curl commnds get the joke from the website. $ sign executes that particular command in crontab file.
+
 		strcpy(command, "crontab -l | { cat; echo \"*/15 * * * * XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/bin/notify-send \\\"\\$(curl -s https://icanhazdadjoke.com)\\\"\";} | crontab -");
 		system(command);
 		return SUCCESS;
 	}
+
+	// ctrlz takes back the last command executed
 	if(strcmp(command->name, "ctrlz")==0){
 		if(strcmp(commandz->name, "cd")==0){
 			chdir(historyz);
@@ -687,9 +714,11 @@ int process_command(struct command_t *command)
 		if(strcmp(commandz->name, "mkdir")==0){
 			rmdir(commandz->args[0]);
 		}
-		
-		
 	}
+
+	// this command prints a poem into terminal
+	// it first creates a random number to choose a poem from poems folder 
+	// then it reads the poem from the file and prints it to terminal
 	if (strcmp(command->name, "poet") == 0)
 	{
 		int randomnumber;
