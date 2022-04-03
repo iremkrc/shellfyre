@@ -16,6 +16,7 @@ const char *sysname = "shellfyre";
 char *cdhistory[1000];
 int cdh_counter = 0;
 
+
 enum return_codes
 {
 	SUCCESS = 0,
@@ -33,6 +34,10 @@ struct command_t
 	char *redirects[3];		// in/out redirection
 	struct command_t *next; // for piping
 };
+
+struct command_t *commandz;
+char *historyz[1000];
+char *cdhistoryz[1000];
 
 /**
  * Prints a command struct
@@ -517,8 +522,6 @@ void file_search(char **args, int argCount)
 	{
 		// search for file recursively and open
 		file_open_recursive(".", args[2]);
-
-		/* code */
 	}
 	else
 	{
@@ -531,6 +534,10 @@ void file_search(char **args, int argCount)
 int process_command(struct command_t *command)
 {
 	int r;
+	if(strcmp(command->name, "ctrlz")!=0){
+		commandz = command;
+	}
+	
 
 	if (strcmp(command->name, "") == 0)
 		return SUCCESS;
@@ -542,6 +549,12 @@ int process_command(struct command_t *command)
 	{
 		if (command->arg_count > 0)
 		{
+			strcpy(historyz, getcwd(NULL, 0));
+			for (int i = 0; i < cdh_counter; i++)
+			{
+				cdhistoryz[i] = malloc(1000);
+				strcpy(cdhistoryz[i], cdhistory[i]);
+			}
 			r = chdir(command->args[0]);
 			if (r == -1)
 			{
@@ -554,7 +567,6 @@ int process_command(struct command_t *command)
 					cdhistory[cdh_counter] = malloc(1000);
 					strcpy(cdhistory[cdh_counter], getcwd(NULL, 0));
 					cdh_counter++;
-					printf("cdh counter1: %d\n", cdh_counter);
 				}
 				else
 				{
@@ -562,10 +574,14 @@ int process_command(struct command_t *command)
 					{
 						strcpy(cdhistory[i], cdhistory[i + 1]);
 					}
+
+					for (int i = 0; i < 9; i++)
+					{
+						strcpy(cdhistory[i], cdhistory[i + 1]);
+					}
 					cdhistory[9] = malloc(1000);
 					strcpy(cdhistory[9], getcwd(NULL, 0));
 				}
-				printf("cdh counter2: %d\n", cdh_counter);
 			}
 
 			return SUCCESS;
@@ -591,9 +607,14 @@ int process_command(struct command_t *command)
 		int num;
 		char str[50];
 		printf("Select directory by letter or number: ");
-		///ASK: When we use scanf, it does not work; is it okay to use gets?
 		gets(str);
-		num = atoi(str);
+		if(str[0] > 96 && str[0] < 107){
+			num = str[0] - 96;
+		}
+		else{
+			num = atoi(str);
+		}
+		
 	
 		if (num > 0 && num < cdh_counter)
 		{
@@ -602,10 +623,13 @@ int process_command(struct command_t *command)
 			chdir(cdhistory[cdh_counter - num - 1]);
 			return SUCCESS;
 		}
-		else if (num - 96 > 0 && num - 96 < cdh_counter)
+		printf("num: %d\n", num);
+		if (num - 96 > 0 && num - 96 < cdh_counter)
 		{
 			//printf("after select: %d\n", cdh_counter - num + 96 - 1);
 			//printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
+			printf("hist: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
+			printf("numsdfg: %d\n", cdh_counter - num + 96 - 1);
 			chdir(cdhistory[cdh_counter - num + 96 - 1]);
 			return SUCCESS;
 		}
@@ -661,8 +685,7 @@ int process_command(struct command_t *command)
 
 		return SUCCESS;
 	}
-	/// ASK: joker is sending a joke as a notification but how to use crontab?
-	/// ASK: crontab does not work :(
+
 	if(strcmp(command->name, "joker")==0){
 		
 		char command[1000], msg[100], command2[100], msg2[500];
@@ -675,6 +698,21 @@ int process_command(struct command_t *command)
 		system(command);
 		//printf("\n");
 		return SUCCESS;
+	}
+	if(strcmp(command->name, "ctrlz")==0){
+		if(strcmp(commandz->name, "cd")==0){
+			chdir(historyz);
+			cdh_counter--;
+			for (int i = 0; i < cdh_counter; i++)
+			{
+				strcpy(cdhistory[i], cdhistoryz[i]);
+			}
+		}
+		if(strcmp(commandz->name, "mkdir")==0){
+			rmdir(commandz->args[0]);
+		}
+		
+		
 	}
 
 	// TODO: Implement your custom commands here
