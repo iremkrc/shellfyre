@@ -1,3 +1,7 @@
+// Authors:
+// İrem Karaca 71879
+// Birkan Çelik 68813
+
 #include <unistd.h>
 #include <sys/wait.h>
 #include <stdio.h>
@@ -405,8 +409,6 @@ void file_open_recursive(char *basePath, char *search_word)
 			if (strstr(dp->d_name, search_word) != NULL)
 			{
 				printf("%s\n", path);
-				/// ASK: it does not print the following line, also does not open the file at the end; try filesearch -r -o comp
-				printf("following line\n");
 				char exec_arg_zero[1000];
 				strcpy(exec_arg_zero, "/bin/xdg-open");
 				new_args[0] = "xdg-open";
@@ -414,8 +416,7 @@ void file_open_recursive(char *basePath, char *search_word)
 				new_args[2] = NULL;
 				printf("print name: %s\n", new_args[1]);
 				printf("print path: %s\n", path);
-				// strcat(exec_arg_zero, args[1]);
-				const char *path2 = exec_arg_zero; // exec_arg_zero;
+				const char *path2 = exec_arg_zero;
 				pid_t pid = fork();
 
 				if (pid == 0)
@@ -437,7 +438,7 @@ void file_open_recursive(char *basePath, char *search_word)
 
 void file_search(char **args, int argCount)
 {
-	// printf("hello world");
+
 	if (argCount == 1)
 	{
 		// normal search
@@ -453,7 +454,6 @@ void file_search(char **args, int argCount)
 				dir_array[count] = malloc(1024);
 				strcpy(dir_array[count], dir->d_name);
 				count++;
-				// printf("%s\n", dir->d_name);
 			}
 			closedir(d);
 		}
@@ -469,8 +469,6 @@ void file_search(char **args, int argCount)
 	{
 		// search for file recursively
 		file_search_recursive(".", args[1]);
-
-		/* code */
 	}
 	else if (argCount == 2 && strcmp(args[0], "-o") == 0)
 	{
@@ -487,7 +485,6 @@ void file_search(char **args, int argCount)
 				dir_array[count] = malloc(1024);
 				strcpy(dir_array[count], dir->d_name);
 				count++;
-				// printf("%s\n", dir->d_name);
 			}
 			closedir(d);
 		}
@@ -503,8 +500,7 @@ void file_search(char **args, int argCount)
 				new_args[0] = "xdg-open";
 				new_args[1] = dir_array[i];
 				new_args[2] = NULL;
-				// strcat(exec_arg_zero, args[1]);
-				const char *path = exec_arg_zero; // exec_arg_zero;
+				const char *path = exec_arg_zero;
 				pid_t pid = fork();
 
 				if (pid == 0)
@@ -593,15 +589,12 @@ int process_command(struct command_t *command)
 			printf("No previous directories to select. Please cd at least once :)\n");
 			return SUCCESS;
 		}
-		printf("cdh counter: %d\n", cdh_counter);
 		for (int i = 0; i < cdh_counter - 1; i++)
 		{
 			printf("%c\t%d) %s\n", cdh_counter - i - 1 + 96, cdh_counter - i - 1, cdhistory[i]);
 
-			// chdir(cdhistory[i]);
 		}
 
-		// pid_t pid = fork();
 		int num;
 		char str[50];
 		printf("Select directory by letter or number: ");
@@ -616,16 +609,12 @@ int process_command(struct command_t *command)
 	
 		if (num > 0 && num < cdh_counter)
 		{
-			// printf("after select: %d\n", cdh_counter - num - 1);
-			// printf("after select str: %s\n", cdhistory[cdh_counter - num - 1]);
 			chdir(cdhistory[cdh_counter - num - 1]);
 			return SUCCESS;
 		}
 		printf("num: %d\n", num);
 		if (num - 96 > 0 && num - 96 < cdh_counter)
 		{
-			// printf("after select: %d\n", cdh_counter - num + 96 - 1);
-			// printf("after select str: %s\n", cdhistory[cdh_counter - num + 96 - 1]);
 			chdir(cdhistory[cdh_counter - num + 96 - 1]);
 			return SUCCESS;
 		}
@@ -633,7 +622,6 @@ int process_command(struct command_t *command)
 
 	if (strcmp(command->name, "filesearch") == 0)
 	{
-		// printf("ARGS1 inside if: %s\n", command->args[0]);
 		file_search(command->args, command->arg_count);
 
 		return SUCCESS;
@@ -641,16 +629,12 @@ int process_command(struct command_t *command)
 
 	if (strcmp(command->name, "take") == 0)
 	{
-		printf("take aruguments %s\n", command->args[0]);
-		print_command(command);
 		char *str = command->args[0];
-		printf("STR: %s\n", str);
 		const char s[2] = "/";
 		char *token;
 		token = strtok(str, s);
 		while (token != NULL)
 		{
-			printf("Tokens are %s\n", token);
 			mkdir(token, 0777);
 			r = chdir(token);
 			if (r == -1)
@@ -682,20 +666,13 @@ int process_command(struct command_t *command)
 
 		return SUCCESS;
 	}
-	/// ASK: joker is sending a joke as a notification but how to use crontab?
-	/// ASK: crontab does not work :(
+
 	if (strcmp(command->name, "joker") == 0)
 	{
 
 		char command[1000], msg[100], command2[100], msg2[500];
-
-		// execv(/bin/sh)
-		// calling exev(crontab,command )
-		// strcpy(command,"curl -s https://icanhazdadjoke.com | xargs -I{} notify-send {}");
 		strcpy(command, "crontab -l | { cat; echo \"*/15 * * * * XDG_RUNTIME_DIR=/run/user/$(id -u) /usr/bin/notify-send \\\"\\$(curl -s https://icanhazdadjoke.com)\\\"\";} | crontab -");
-		// strcpy(command, "crontab -l | { cat; echo \"51 13 * * * env DISPLAY=:0 /usr/bin/gnome-calculator\"; } | crontab -");
 		system(command);
-		// printf("\n");
 		return SUCCESS;
 	}
 	if(strcmp(command->name, "ctrlz")==0){
@@ -767,8 +744,9 @@ int process_command(struct command_t *command)
 		command->args[command->arg_count - 1] = NULL;
 
 		/// TODO: do your own exec with path resolving using execv()
+		// Generate the path to use in execv, then give it to execv as an argument
+		// So that commands under the bin directory can be executed
 		char exec_arg_zero[1000];
-
 		strcpy(exec_arg_zero, "/bin/");
 		strcat(exec_arg_zero, command->args[0]);
 		const char *path = exec_arg_zero; // exec_arg_zero;
